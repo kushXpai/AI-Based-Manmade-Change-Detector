@@ -1,25 +1,39 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import axios from 'axios';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-function App() {
+const App = () => {
+  const [image1, setImage1] = useState(null);
+  const [image2, setImage2] = useState(null);
+  const [changeMask, setChangeMask] = useState(null);
+
+  const handleFileChange = (e, setImage) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImage(reader.result);
+    };
+    reader.readAsDataURL(e.target.files[0]);
+  };
+
+  const handleDetectChanges = async () => {
+    const response = await axios.post('http://localhost:5000/detect_changes', {
+      image1: image1.split(',')[1],
+      image2: image2.split(',')[1],
+    });
+    setChangeMask(response.data.change_mask);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <h1>Change Detection</h1>
+      <input type="file" onChange={(e) => handleFileChange(e, setImage1)} />
+      <input type="file" onChange={(e) => handleFileChange(e, setImage2)} />
+      <button onClick={handleDetectChanges}>Detect Changes</button>
+      {changeMask && <img src={`data:image/png;base64,${changeMask}`} alt="Change Mask" />}
+      <div id="map" style={{ height: '500px' }}></div>
     </div>
   );
-}
+};
 
 export default App;
